@@ -1,0 +1,45 @@
+// lib/mongodb.ts
+import "server-only";
+import { MongoClient, type Db } from "mongodb";
+
+if (!process.env.MONGO_URI) {
+  throw new Error('❌ Missing environment variable: "MONGO_URI"');
+}
+
+const uri = process.env.MONGO_URI;
+const options = {};
+
+let client: MongoClient;
+let clientPromise: Promise<MongoClient>;
+
+if (process.env.NODE_ENV === "development") {
+  const globalWithMongo = global as typeof globalThis & { _mongoClientPromise?: Promise<MongoClient> };
+  if (!globalWithMongo._mongoClientPromise) {
+    client = new MongoClient(uri, options);
+    globalWithMongo._mongoClientPromise = client.connect().then((c) => {
+      console.log("✅ Connected to MongoDB (dev)");
+      return c;
+    });
+  }
+  clientPromise = globalWithMongo._mongoClientPromise;
+} else {
+  client = new MongoClient(uri, options);
+  clientPromise = client.connect().then((c) => {
+    console.log("✅ Connected to MongoDB (prod)");
+    return c;
+  });
+}
+
+export default clientPromise;
+
+// Lấy database
+export async function getDatabase(): Promise<Db> {
+  const client = await clientPromise;
+  return client.db("autism_detection");
+}
+
+// Hàm connectDB() kiểu wrapper
+export async function connectDB() {
+  await clientPromise;
+  console.log("MongoDB is connected");
+}
