@@ -160,8 +160,8 @@ export default function DashboardPage() {
                                                         <span className="font-medium">Ngày:</span> {new Date(notification.date).toLocaleDateString("vi-VN")}
                                                     </p>
                                                     <p>
-                                                       <span className="font-medium">Đường dẫn:</span> <a href={notification.link} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 break-words">
-                                                            {notification.link}
+                                                        <span className="font-medium">Nguồn:</span> <a href={notification.link} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">
+                                                            {notification.source}
                                                         </a>
                                                     </p>
                                                 </div>

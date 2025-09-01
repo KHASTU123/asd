@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-export function DailyLogForm({ childId, onSaved }: { childId: string, onSaved?: () => void }) {
+export default function DailyLogForm({ childId, onSaved }: { childId: string, onSaved?: () => void }) {
   const [form, setForm] = useState({ mood: "neutral", sleepHours: 8, meals: "", communication: "", activities: "", therapyNotes: "", behaviorNotes: "" });
   const [saving, setSaving] = useState(false);
 

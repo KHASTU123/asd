@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-export function DailyLogChart({ childId }: { childId: string }) {
+export default function DailyLogChart({ childId }: { childId: string }) {
   const [data, setData] = useState<{date:string, sleep:number}[]>([]);
 
   useEffect(()=>{
