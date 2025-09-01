@@ -1,6 +1,6 @@
 // app/api/child/setup/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db";
 import Child from "@/app/models/child";
 
 export async function POST(req: NextRequest) {

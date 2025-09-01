@@ -1,6 +1,6 @@
 // app/api/resources/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db";
 import Resource from "@/app/models/Resource";
 
 export async function GET(req: NextRequest) {

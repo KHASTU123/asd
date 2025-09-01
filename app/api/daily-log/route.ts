@@ -1,6 +1,6 @@
 // app/api/daily-log/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db";
 import DailyLog from "@/app/models/DailyLog";
 
 export async function POST(req: NextRequest) {
