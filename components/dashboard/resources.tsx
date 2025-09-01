@@ -67,7 +67,7 @@ export default function ResourcesDashboard() {
       </form>
 
       <div className="space-y-4">
-        {data?.map((item: any) => (
+        {data?.resources?.map((item: any) => (
           <div key={item._id} className="p-4 border rounded shadow">
             <h3 className="font-bold text-lg">{item.title}</h3>
             <p className="text-sm text-gray-600">{item.description}</p>

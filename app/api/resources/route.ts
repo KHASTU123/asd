@@ -1,37 +1,17 @@
-import { NextRequest, NextResponse } from "next/server"
-import { Resource } from "../../models/resource"
-import mongoose from "mongoose"
+// app/api/resources/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { connectDB } from "@/lib/mongodb";
+import Resource from "@/app/models/Resource";
 
-const MONGODB_URI = process.env.MONGO_URI || ""
-
-let isConnected = false
-async function dbConnect() {
-  if (isConnected) return
-  await mongoose.connect(MONGODB_URI)
-  isConnected = true
-}
-
-// GET /api/resources
 export async function GET(req: NextRequest) {
-  await dbConnect()
-  const resources = await Resource.find({})
-  return NextResponse.json(resources)
-}
-
-// POST /api/resources
-export async function POST(req: NextRequest) {
-  await dbConnect()
   try {
-    const body = await req.json()
-    const { title, description, category } = body
-
-    if (!title || !category) {
-      return NextResponse.json({ error: "Thiếu title hoặc category" }, { status: 400 })
-    }
-
-    const newResource = await Resource.create({ title, description, category })
-    return NextResponse.json(newResource, { status: 201 })
-  } catch (error) {
-    return NextResponse.json({ error: "Không thể thêm tài nguyên" }, { status: 500 })
+    await connectDB();
+    const cat = new URL(req.url).searchParams.get("category") || undefined;
+    const q = cat ? { category: cat } : {};
+    const items = await Resource.find(q).sort({ isFeatured: -1, publishedAt: -1 }).limit(200);
+    return NextResponse.json({ success: true, items });
+  } catch (err) {
+    console.error("Resources GET error:", err);
+    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
   }
 }

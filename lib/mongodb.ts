@@ -32,13 +32,11 @@ if (process.env.NODE_ENV === "development") {
 
 export default clientPromise;
 
-// Lấy database
 export async function getDatabase(): Promise<Db> {
   const client = await clientPromise;
   return client.db("autism_detection");
 }
 
-// Hàm connectDB() kiểu wrapper
 export async function connectDB() {
   await clientPromise;
   console.log("MongoDB is connected");

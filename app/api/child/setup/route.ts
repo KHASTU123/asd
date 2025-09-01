@@ -1,23 +1,22 @@
 // app/api/child/setup/route.ts
-import { NextResponse } from "next/server"
-import {connectDB} from "@/lib/mongodb"
-import Child from "../../../models/child"
+import { NextRequest, NextResponse } from "next/server";
+import { connectDB } from "@/lib/mongodb";
+import Child from "@/app/models/child";
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const body = await request.json()
-    const { userId, name, age, gender } = body
+    const body = await req.json();
+    const { userId, name, age, gender, dob, diagnosis, healthNotes, therapy, favoriteActivities } = body;
 
-    if (!userId || !name || !age || !gender) {
-      return NextResponse.json({ error: "Thiếu dữ liệu" }, { status: 400 })
+    if (!userId || !name || !gender) {
+      return NextResponse.json({ success: false, message: "Thiếu dữ liệu" }, { status: 400 });
     }
 
-    const newChild = await Child.create({ userId, name, age, gender })
-
-    return NextResponse.json({ message: "Lưu thông tin trẻ thành công", child: newChild })
-  } catch (error) {
-    console.error("❌ Lỗi khi lưu child:", error)
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    const child = await Child.create({ userId, name, age, gender, dob, diagnosis, healthNotes, therapy, favoriteActivities });
+    return NextResponse.json({ success: true, child }, { status: 201 });
+  } catch (err) {
+    console.error("Child setup error:", err);
+    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
   }
 }

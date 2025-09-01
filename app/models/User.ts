@@ -1,10 +1,18 @@
-import mongoose from "mongoose"
+import mongoose, { Schema, Document } from "mongoose";
 
-const UserSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // nhớ hash bằng bcrypt
-  createdAt: { type: Date, default: Date.now },
-})
+export interface IUser extends Document {
+  email: string;
+  password: string;
+  fullName?: string;
+}
 
-export default mongoose.models.User || mongoose.model("User", UserSchema)
+const UserSchema: Schema = new Schema(
+  {
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    fullName: { type: String }, // tùy chọn
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.User || mongoose.model<IUser>("User", UserSchema);

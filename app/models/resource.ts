@@ -1,22 +1,15 @@
-import mongoose, { Schema, Document } from "mongoose"
+// app/models/Resource.ts
+import mongoose from "mongoose";
 
-export interface IResource extends Document {
-  title: string
-  description?: string
-  category: string
-  url?: string
-  file?: string
-  createdAt: Date
-}
-
-const ResourceSchema = new Schema<IResource>({
+const ResourceSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  description: { type: String },
-  category: { type: String, required: true },
-  url: { type: String },
-  file: { type: String },
-  createdAt: { type: Date, default: Date.now },
-})
+  category: { type: String, enum: ["ministry","scholarship","academic","guide"], required: true },
+  summary: { type: String, default: "" },
+  content: { type: String, default: "" }, // markdown/HTML text
+  url: { type: String, default: "" },
+  publishedAt: { type: Date, default: Date.now },
+  tags: [{ type: String }],
+  isFeatured: { type: Boolean, default: false }
+});
 
-export const Resource =
-  mongoose.models.Resource || mongoose.model<IResource>("Resource", ResourceSchema)
+export default mongoose.models.Resource || mongoose.model("Resource", ResourceSchema);
