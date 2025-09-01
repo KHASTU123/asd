@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { WelcomeToast } from "@/components/dashboard/welcome-toast";
-import  DailyLogForm  from "@/components/dashboard/daily-log-form";
+// Đã loại bỏ import cho DailyLogChart để tích hợp nó vào file này
+import DailyLogForm from "@/components/dashboard/daily-log-form";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Bell, User, Newspaper, BarChart2, MessageSquare, BriefcaseMedical } from "lucide-react";
+import { Bell, User, Newspaper, BarChart2, MessageSquare, BriefcaseMedical, ChevronDown, ChevronUp } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-
+import WelcomeToast from "@/components/dashboard/welcome-toast";
 // Định nghĩa kiểu dữ liệu cho thông báo
 interface Notification {
     _id: string;
@@ -15,6 +15,7 @@ interface Notification {
     source: string;
     link: string;
     date: string;
+    image?: string;
 }
 
 // Chú thích: Component DailyLogChart đã được chuyển vào đây để tạo thành một file duy nhất.
@@ -26,7 +27,10 @@ function DailyLogChart({ childId }: { childId: string }) {
         if (!childId) return;
         (async () => {
             const res = await fetch(`/api/daily-log?childId=${childId}`);
-            if (!res.ok) return;
+            if (!res.ok) {
+                console.error("Failed to fetch daily logs:", await res.text());
+                return;
+            }
             const js = await res.json();
             const items = (js.logs || []).map((l: any) => ({ date: new Date(l.date).toLocaleDateString(), sleep: l.sleepHours || 0 })).reverse();
             setData(items);
@@ -60,10 +64,16 @@ function DailyLogChart({ childId }: { childId: string }) {
 
 export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
-    const [childId, setChildId] = useState<string | null>("mock-child-id"); // Sử dụng childId giả để hiển thị biểu đồ
+    // Đã thay thế "mock-child-id" bằng một ID giả hợp lệ để tránh lỗi CastError từ MongoDB
+    const [childId, setChildId] = useState<string | null>("66a8779b1248c8949c81c4e7");
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+
+    const handleToggleExpand = (id: string) => {
+        setExpandedId(expandedId === id ? null : id);
+    };
 
     useEffect(() => {
         const u = localStorage.getItem("user");
@@ -77,6 +87,11 @@ export default function DashboardPage() {
                     throw new Error('Failed to fetch notifications');
                 }
                 const data = await response.json();
+                // Tạm thời thêm trường 'image' cho dữ liệu giả định
+                // const updatedData = data.map((item: Notification) => ({
+                //     ...item,
+                //     image: `https://placehold.co/400x200/2563EB/ffffff?text=Image`,
+                // }));
                 setNotifications(data);
             } catch (err: any) {
                 setError(err.message);
@@ -145,25 +160,74 @@ export default function DashboardPage() {
                                     <div className="text-center text-red-500 dark:text-red-400">Lỗi: {error}</div>
                                 ) : (
                                     <ul className="space-y-4">
-                                        {notifications.map(notification => (
-                                            <li key={notification._id} className="pb-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-                                                <div className="flex items-center space-x-3 text-sm mb-2">
-                                                    <Bell size={18} className="text-blue-500 flex-shrink-0" />
-                                                    <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                                                        <a href={notification.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                        {notifications.map((notification) => (
+                                            <li
+                                                key={notification._id}
+                                                className="pb-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                                            >
+                                                {/* Header toggle */}
+                                                <div
+                                                    className="flex items-center justify-between cursor-pointer"
+                                                    onClick={() => handleToggleExpand(notification._id)}
+                                                >
+                                                    <div className="flex items-center space-x-3 text-sm mb-2">
+                                                        <Bell size={18} className="text-blue-500 flex-shrink-0" />
+                                                        <h3 className="font-semibold text-gray-800 dark:text-gray-100">
                                                             {notification.title}
-                                                        </a>
-                                                    </h3>
+                                                        </h3>
+                                                    </div>
+                                                    {expandedId === notification._id ? (
+                                                        <ChevronUp
+                                                            size={24}
+                                                            className="text-gray-500 transition-transform duration-300"
+                                                        />
+                                                    ) : (
+                                                        <ChevronDown
+                                                            size={24}
+                                                            className="text-gray-500 transition-transform duration-300"
+                                                        />
+                                                    )}
                                                 </div>
-                                                <div className="pl-6 text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                                                    <p>
-                                                        <span className="font-medium">Ngày:</span> {new Date(notification.date).toLocaleDateString("vi-VN")}
-                                                    </p>
-                                                    <p>
-                                                       <span className="font-medium">Đường dẫn:</span> <a href={notification.link} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 break-words">
-                                                            {notification.link}
-                                                        </a>
-                                                    </p>
+
+                                                {/* Expand content */}
+                                                <div
+                                                    className={`transition-all duration-300 ease-in-out ${expandedId === notification._id
+                                                            ? "max-h-80 opacity-100 mt-4"
+                                                            : "max-h-0 opacity-0"
+                                                        } overflow-hidden`}
+                                                >
+                                                    <div className="pl-6 text-sm text-gray-600 dark:text-gray-400 space-y-2 max-h-72 overflow-y-auto pr-2">
+                                                        {notification.image && (
+                                                            <img
+                                                                src={notification.image}
+                                                                alt={notification.title}
+                                                                className="w-full max-h-40 object-cover rounded-xl mb-2 shadow-md"
+                                                            />
+                                                        )}
+                                                        <p>
+                                                            <span className="font-medium">Nội dung:</span>{" "}
+                                                            {notification.content}
+                                                        </p>
+                                                        <p>
+                                                            <span className="font-medium">Nguồn:</span>{" "}
+                                                            {notification.source}
+                                                        </p>
+                                                        <p>
+                                                            <span className="font-medium">Ngày:</span>{" "}
+                                                            {new Date(notification.date).toLocaleDateString("vi-VN")}
+                                                        </p>
+                                                        <p>
+                                                            <span className="font-medium">Đường dẫn:</span>{" "}
+                                                            <a
+                                                                href={notification.link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="hover:underline text-blue-500 break-words"
+                                                            >
+                                                                {notification.link}
+                                                            </a>
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </li>
                                         ))}
