@@ -22,16 +22,18 @@ export function LoginForm() {
       });
 
       const data = await res.json();
-
+      if (data.success) {
+        localStorage.setItem("token", data.token); // 🔑 Lưu token
+        localStorage.setItem("user", JSON.stringify(data.user));
+        alert("Login thành công!");
+      }
       if (!res.ok) {
         setError(data.message || data.error || "Đăng nhập thất bại");
         setIsLoading(false);
         return;
       }
-      
-      // Lưu user vào localStorage (thay thế bằng Firestore trong thực tế)
-      localStorage.setItem("user", JSON.stringify(data.user));
-      
+
+
       router.push("/dashboard");
     } catch (err) {
       console.error(err);

@@ -1,36 +1,71 @@
-import { NextResponse } from "next/server"
-import { MongoClient, ObjectId } from "mongodb"
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { connectDB } from "@/lib/db";
+import Post from "@/app/models/Post";
+import { verifyToken } from "@/lib/auth";
 
-const uri = process.env.MONGO_URI as string
-let client: MongoClient
+const createPostSchema = z.object({
+  content: z.string().min(1, "Content is required"),
+  media: z
+    .array(
+      z.object({
+        url: z.string().url(),
+        kind: z.enum(["image", "video"]).default("image"),
+      })
+    )
+    .optional(),
+});
 
-async function getClient() {
-  if (!client) {
-    client = new MongoClient(uri)
-    await client.connect()
-  }
-  return client
-}
-
-// GET: lấy danh sách bài viết
+// ================== GET ==================
 export async function GET() {
-  const client = await getClient()
-  const posts = await client.db("community").collection("posts")
-    .find().sort({ createdAt: -1 }).toArray()
-  return NextResponse.json(posts)
+  try {
+    await connectDB();
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .populate("author", "fullName email") // populate theo schema User
+      .lean();
+
+    return NextResponse.json({ success: true, data: posts }, { status: 200 });
+  } catch (err) {
+    console.error("❌ Error fetching posts:", err);
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch posts" },
+      { status: 500 }
+    );
+  }
 }
 
-// POST: thêm bài viết
-export async function POST(req: Request) {
-  const body = await req.json()
-  const client = await getClient()
-  const posts = client.db("community").collection("posts")
-  const newPost = {
-    title: body.title,
-    content: body.content,
-    author: body.author || "Ẩn danh",
-    createdAt: new Date()
+// ================== POST ==================
+export async function POST(req: NextRequest) {
+  try {
+    await connectDB();
+
+    // ✅ Lấy token từ header
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    // ✅ Validate body
+    const body = await req.json();
+    const { content, media } = createPostSchema.parse(body);
+
+    // ✅ Tạo post
+    const post = await Post.create({
+      author: payload.id,
+      content,
+      media,
+    });
+
+    return NextResponse.json({ success: true, post }, { status: 201 });
+  } catch (err) {
+    console.error("❌ Post error:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
-  const result = await posts.insertOne(newPost)
-  return NextResponse.json({ _id: result.insertedId, ...newPost })
 }

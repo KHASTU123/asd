@@ -1,39 +1,57 @@
-import { NextResponse } from "next/server";
+// app/api/auth/register/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
-import User from "../../../models/User";
+import User from "@/app/models/User";
 
-export async function POST(req: Request) {
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+
+export async function POST(req: NextRequest) {
   try {
+    await connectDB();
     const { email, password, fullName } = await req.json();
 
     if (!email || !password || !fullName) {
-      return NextResponse.json({ error: "Thiếu thông tin" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Missing fields" },
+        { status: 400 }
+      );
     }
 
-    await connectDB();
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return NextResponse.json({ error: "Người dùng đã tồn tại" }, { status: 400 });
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return NextResponse.json(
+        { success: false, message: "Email already registered" },
+        { status: 400 }
+      );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({
+    const hashed = await bcrypt.hash(password, 12);
+    const user = await User.create({
       email,
-      password: hashedPassword,
+      password: hashed,
       fullName,
+      avatar: "/avatar-placeholder.png", // avatar mặc định
     });
 
-    return NextResponse.json(
-      {
-        message: "Đăng ký thành công",
-        user: { id: newUser._id, email: newUser.email, fullName: newUser.fullName },
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+
+    return NextResponse.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        avatar: user.avatar,
       },
-      { status: 200 }
-    );
+    });
   } catch (err) {
     console.error("Register error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    );
   }
 }
