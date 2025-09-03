@@ -1,44 +1,160 @@
 "use client";
 import React, { useState } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { toast } from "sonner";
 
-export default function DailyLogForm({ childId, onSaved }: { childId: string, onSaved?: () => void }) {
-  const [form, setForm] = useState({ mood: "neutral", sleepHours: 8, meals: "", communication: "", activities: "", therapyNotes: "", behaviorNotes: "" });
-  const [saving, setSaving] = useState(false);
+interface DailyLogFormProps {
+  childId: string;
+}
 
-  async function submit(e: React.FormEvent) {
+export default function DailyLogForm({ childId }: DailyLogFormProps) {
+  const [form, setForm] = useState({
+    mood: "Bình thường",
+    sleepHours: 8,
+    eating: "",
+    communication: "",
+    activities: "",
+    therapyNotes: "",
+    specialBehavior: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (field: string, value: any) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!childId) return alert("Chưa chọn bé");
-    setSaving(true);
+    setLoading(true);
     try {
-      const res = await fetch("/api/daily-log", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ childId, ...form }) });
-      if (!res.ok) throw new Error("Fail");
-      onSaved?.();
-    } catch (err) {
-      console.error(err);
-      alert("Lưu nhật ký thất bại");
+      const res = await fetch("/api/daily-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId, ...form }),
+      });
+      if (!res.ok) throw new Error("Lỗi khi lưu nhật ký");
+      toast.success("Lưu nhật ký thành công!");
+      setForm({
+        mood: "Bình thường",
+        sleepHours: 8,
+        eating: "",
+        communication: "",
+        activities: "",
+        therapyNotes: "",
+        specialBehavior: "",
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Đã có lỗi xảy ra");
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <form onSubmit={submit} className="grid gap-3 p-4 bg-white rounded-2xl shadow">
-      <label>Tâm trạng
-        <select value={form.mood} onChange={e=>setForm({...form,mood:e.target.value})}>
-          <option value="very_happy">Rất vui</option>
-          <option value="happy">Vui</option>
-          <option value="neutral">Bình thường</option>
-          <option value="anxious">Lo lắng</option>
-          <option value="irritable">Khó chịu</option>
-        </select>
-      </label>
-      <label>Giờ ngủ <input type="number" min={0} max={24} value={form.sleepHours} onChange={e=>setForm({...form,sleepHours: Number(e.target.value)})} /></label>
-      <input placeholder="Ăn uống" value={form.meals} onChange={e=>setForm({...form,meals:e.target.value})} />
-      <input placeholder="Giao tiếp" value={form.communication} onChange={e=>setForm({...form,communication:e.target.value})} />
-      <textarea placeholder="Hoạt động" value={form.activities} onChange={e=>setForm({...form,activities:e.target.value})} />
-      <textarea placeholder="Ghi chú trị liệu" value={form.therapyNotes} onChange={e=>setForm({...form,therapyNotes:e.target.value})} />
-      <textarea placeholder="Hành vi đặc biệt" value={form.behaviorNotes} onChange={e=>setForm({...form,behaviorNotes:e.target.value})} />
-      <button type="submit" disabled={saving}>{saving ? "Đang lưu..." : "Lưu nhật ký"}</button>
-    </form>
+    <Card className="rounded-3xl shadow-lg border-none">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold text-blue-600">Nhật ký hằng ngày</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          {/* Tâm trạng */}
+          <div>
+            <label className="block mb-2 font-medium">Tâm trạng hôm nay</label>
+            <Select
+              value={form.mood}
+              onValueChange={(val) => handleChange("mood", val)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Chọn tâm trạng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Bình thường">Bình thường</SelectItem>
+                <SelectItem value="Vui vẻ">Vui vẻ</SelectItem>
+                <SelectItem value="Mệt mỏi">Mệt mỏi</SelectItem>
+                <SelectItem value="Căng thẳng">Căng thẳng</SelectItem>
+                <SelectItem value="Khác">Khác</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Giấc ngủ */}
+          <div>
+            <label className="block mb-2 font-medium">Giờ ngủ (tiếng)</label>
+            <div className="flex items-center gap-4">
+              <Slider
+                min={0}
+                max={12}
+                step={0.5}
+                value={[form.sleepHours]}
+                onValueChange={(val) => handleChange("sleepHours", val[0])}
+                className="flex-1"
+              />
+              <span className="w-12 text-center font-semibold">{form.sleepHours}h</span>
+            </div>
+          </div>
+
+          {/* Ăn uống */}
+          <div>
+            <label className="block mb-2 font-medium">Ăn uống</label>
+            <Textarea
+              value={form.eating}
+              onChange={(e) => handleChange("eating", e.target.value)}
+              placeholder="Mô tả thói quen ăn uống trong ngày..."
+            />
+          </div>
+
+          {/* Giao tiếp */}
+          <div>
+            <label className="block mb-2 font-medium">Giao tiếp</label>
+            <Textarea
+              value={form.communication}
+              onChange={(e) => handleChange("communication", e.target.value)}
+              placeholder="Trẻ có giao tiếp với gia đình / bạn bè / giáo viên không..."
+            />
+          </div>
+
+          {/* Hoạt động */}
+          <div>
+            <label className="block mb-2 font-medium">Hoạt động</label>
+            <Textarea
+              value={form.activities}
+              onChange={(e) => handleChange("activities", e.target.value)}
+              placeholder="Các hoạt động trong ngày..."
+            />
+          </div>
+
+          {/* Ghi chú trị liệu */}
+          <div>
+            <label className="block mb-2 font-medium">Ghi chú trị liệu</label>
+            <Textarea
+              value={form.therapyNotes}
+              onChange={(e) => handleChange("therapyNotes", e.target.value)}
+              placeholder="Ghi chú từ buổi trị liệu (nếu có)..."
+            />
+          </div>
+
+          {/* Hành vi đặc biệt */}
+          <div>
+            <label className="block mb-2 font-medium">Hành vi đặc biệt</label>
+            <Textarea
+              value={form.specialBehavior}
+              onChange={(e) => handleChange("specialBehavior", e.target.value)}
+              placeholder="Ghi lại hành vi đặc biệt / bất thường..."
+            />
+          </div>
+
+          <div className="text-right">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Đang lưu..." : "Lưu nhật ký"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

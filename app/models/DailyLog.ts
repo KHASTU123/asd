@@ -1,17 +1,24 @@
-// app/models/DailyLog.ts
-import mongoose from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
-const DailyLogSchema = new mongoose.Schema({
-  childId: { type: mongoose.Schema.Types.ObjectId, ref: "Child", required: true, index: true },
-  date: { type: Date, default: () => new Date(), index: true },
-  mood: { type: String, enum: ["very_happy","happy","neutral","anxious","irritable"], default: "neutral" },
-  sleepHours: { type: Number, min: 0, max: 24, default: 0 },
-  meals: { type: String, default: "" },
-  communication: { type: String, default: "" },
-  activities: { type: String, default: "" },
-  therapyNotes: { type: String, default: "" },
-  behaviorNotes: { type: String, default: "" },
-  createdAt: { type: Date, default: Date.now }
+export interface IDailyLog extends Document {
+  childId: string;
+  date: Date;
+  sleepHours: number;
+  mood: "Happy" | "Calm" | "Joyful" | "Tired" | "Sad" | "Angry" | "Anxious";
+  notes?: string;
+}
+
+const DailyLogSchema: Schema = new Schema({
+  childId: { type: String, required: true },
+  date: { type: Date, default: Date.now },
+  sleepHours: { type: Number, required: true },
+  mood: {
+    type: String,
+    enum: ["Happy", "Calm", "Joyful", "Tired", "Sad", "Angry", "Anxious"],
+    required: true,
+  },
+  notes: { type: String },
 });
 
-export default mongoose.models.DailyLog || mongoose.model("DailyLog", DailyLogSchema);
+export default mongoose.models.DailyLog ||
+  mongoose.model<IDailyLog>("DailyLog", DailyLogSchema);

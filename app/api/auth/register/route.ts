@@ -30,7 +30,7 @@ export async function POST(req: Request) {
         message: "Đăng ký thành công",
         user: { id: newUser._id, email: newUser.email, fullName: newUser.fullName },
       },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (err) {
     console.error("Register error:", err);

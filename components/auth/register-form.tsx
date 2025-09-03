@@ -51,7 +51,7 @@ export function RegisterForm() {
       }
 
       // 👉 điều hướng
-      router.push("/auth/login");
+      router.replace("/auth/login");
       // hoặc: router.push("/dashboard/setup");
     } catch (err) {
       console.error(err);

@@ -1,12 +1,16 @@
 "use client";
 import React, { useEffect, useState } from "react";
-// Đã loại bỏ import cho DailyLogChart để tích hợp nó vào file này
-import DailyLogForm from "@/components/dashboard/daily-log-form";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Bell, User, Newspaper, BarChart2, MessageSquare, BriefcaseMedical, ChevronDown, ChevronUp } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import WelcomeToast from "@/components/dashboard/welcome-toast";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import SummaryCharts from "../../components/dashboard/SummaryCharts";
 // Định nghĩa kiểu dữ liệu cho thông báo
 interface Notification {
     _id: string;
@@ -16,6 +20,139 @@ interface Notification {
     link: string;
     date: string;
     image?: string;
+}
+
+// Component DailyLogForm đã được di chuyển vào đây
+function DailyLogForm({ childId }: { childId: string }) {
+    const [sleepHours, setSleepHours] = useState<number | ''>("");
+    const [mood, setMood] = useState<string>("");
+    const [notes, setNotes] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+
+    // Các lựa chọn tâm trạng đã được sửa đổi để phù hợp với enum của MongoDB
+    const moodOptions = [
+        { label: "Hạnh phúc", value: "Happy" },
+        { label: "Bình tĩnh", value: "Calm" },
+        { label: "Vui vẻ", value: "Joyful" },
+        { label: "Mệt mỏi", value: "Tired" },
+        { label: "Buồn bã", value: "Sad" },
+        { label: "Tức giận", value: "Angry" },
+        { label: "Lo lắng", value: "Anxious" },
+    ];
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        const logData = {
+            childId,
+            date: new Date().toISOString(),
+            sleepHours: typeof sleepHours === 'number' ? sleepHours : 0,
+            mood,
+            notes,
+        };
+
+        try {
+            const res = await fetch("/api/daily-log", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(logData),
+            });
+
+            if (res.ok) {
+                toast({
+                    title: "Lưu nhật ký thành công!",
+                    description: "Dữ liệu của bạn đã được ghi lại.",
+                });
+                // Reset form
+                setSleepHours("");
+                setMood("");
+                setNotes("");
+            } else {
+                const errorData = await res.json();
+                toast({
+                    title: "Có lỗi xảy ra",
+                    description: errorData.message || "Không thể lưu nhật ký.",
+                    variant: "destructive",
+                });
+                console.error("Failed to save daily log:", errorData);
+            }
+        } catch (err) {
+            console.error("Network error:", err);
+            toast({
+                title: "Lỗi kết nối",
+                description: "Không thể kết nối tới máy chủ.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Card className="rounded-3xl shadow-lg border-none">
+            <CardHeader>
+                <CardTitle className="text-2xl font-bold">Ghi chép hàng ngày</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-400">
+                    Ghi lại các hoạt động và tâm trạng của trẻ.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                        <Label htmlFor="sleep-hours" className="text-base font-semibold">
+                            Giờ ngủ (trong 24 giờ)
+                        </Label>
+                        <input
+                            id="sleep-hours"
+                            type="number"
+                            value={sleepHours}
+                            onChange={(e) => setSleepHours(parseFloat(e.target.value))}
+                            className="mt-2 w-full px-4 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Nhập số giờ ngủ"
+                            min="0"
+                            max="24"
+                            step="0.5"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="mood-select" className="text-base font-semibold">
+                            Tâm trạng của trẻ
+                        </Label>
+                        <Select onValueChange={(value) => setMood(value)} required>
+                            <SelectTrigger id="mood-select" className="w-full">
+                                <SelectValue placeholder="Chọn tâm trạng" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {moodOptions.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="notes" className="text-base font-semibold">
+                            Ghi chú khác
+                        </Label>
+                        <Textarea
+                            id="notes"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Nhập các ghi chú bổ sung về ngày hôm nay..."
+                            rows={4}
+                            className="mt-2"
+                        />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        {isSubmitting ? "Đang lưu..." : "Lưu Nhật ký"}
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
+    );
 }
 
 // Chú thích: Component DailyLogChart đã được chuyển vào đây để tạo thành một file duy nhất.
@@ -64,7 +201,6 @@ function DailyLogChart({ childId }: { childId: string }) {
 
 export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
-    // Đã thay thế "mock-child-id" bằng một ID giả hợp lệ để tránh lỗi CastError từ MongoDB
     const [childId, setChildId] = useState<string | null>("66a8779b1248c8949c81c4e7");
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +215,6 @@ export default function DashboardPage() {
         const u = localStorage.getItem("user");
         if (u) setUser(JSON.parse(u));
 
-        // Fetch notifications from the API
         const fetchNotifications = async () => {
             try {
                 const response = await fetch('/api/notifications');
@@ -87,11 +222,6 @@ export default function DashboardPage() {
                     throw new Error('Failed to fetch notifications');
                 }
                 const data = await response.json();
-                // Tạm thời thêm trường 'image' cho dữ liệu giả định
-                // const updatedData = data.map((item: Notification) => ({
-                //     ...item,
-                //     image: `https://placehold.co/400x200/2563EB/ffffff?text=Image`,
-                // }));
                 setNotifications(data);
             } catch (err: any) {
                 setError(err.message);
@@ -105,7 +235,6 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-6 flex">
-            {/* Sidebar */}
             <aside className="w-64 bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl hidden lg:block">
                 <h2 className="text-2xl font-extrabold mb-8 text-gray-800 dark:text-gray-100">AutismCare</h2>
                 <nav className="space-y-3">
@@ -113,7 +242,7 @@ export default function DashboardPage() {
                         <BarChart2 size={20} />
                         <span>Tổng quan</span>
                     </a>
-                    <a href="#" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <a href="/mycv" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <User size={20} />
                         <span>Thông tin trẻ</span>
                     </a>
@@ -121,14 +250,13 @@ export default function DashboardPage() {
                         <BriefcaseMedical size={20} />
                         <span>Thông tin y tế</span>
                     </a>
-                    <a href="#" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <a href="/community" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <MessageSquare size={20} />
                         <span>Cộng đồng</span>
                     </a>
                 </nav>
             </aside>
 
-            {/* Main Content */}
             <main className="flex-1 lg:ml-8">
                 <Navbar />
                 <header className="flex items-center justify-between mb-6">
@@ -136,16 +264,14 @@ export default function DashboardPage() {
                 </header>
 
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Cột chính bên trái */}
                     <div className="lg:col-span-2 space-y-8">
                         <WelcomeToast name={user?.name} />
                         <DailyLogForm childId={childId || ""} />
                         <DailyLogChart childId={childId || ""} />
+                        <SummaryCharts childId={childId || ""} />
                     </div>
 
-                    {/* Cột phụ bên phải */}
                     <div className="space-y-8">
-                        {/* Thẻ Tin tức & Thông báo */}
                         <Card className="rounded-3xl shadow-lg border-none">
                             <CardHeader>
                                 <CardTitle className="text-2xl font-bold">Tin tức & Thông báo</CardTitle>
@@ -165,7 +291,6 @@ export default function DashboardPage() {
                                                 key={notification._id}
                                                 className="pb-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                                             >
-                                                {/* Header toggle */}
                                                 <div
                                                     className="flex items-center justify-between cursor-pointer"
                                                     onClick={() => handleToggleExpand(notification._id)}
@@ -188,8 +313,6 @@ export default function DashboardPage() {
                                                         />
                                                     )}
                                                 </div>
-
-                                                {/* Expand content */}
                                                 <div
                                                     className={`transition-all duration-300 ease-in-out ${expandedId === notification._id
                                                             ? "max-h-80 opacity-100 mt-4"
