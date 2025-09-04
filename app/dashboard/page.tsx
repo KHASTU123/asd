@@ -1,17 +1,135 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Bell, User, Newspaper, BarChart2, MessageSquare, BriefcaseMedical, ChevronDown, ChevronUp } from "lucide-react";
-import { Navbar } from "@/components/navbar";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import WelcomeToast from "@/components/dashboard/welcome-toast";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
-import SummaryCharts from "../../components/dashboard/SummaryCharts";
-// Định nghĩa kiểu dữ liệu cho thông báo
+'use client';
+import { BarChart, Bar } from "recharts";
+import React, { useEffect, useState } from 'react';
+import { Bell, User, BriefcaseMedical, ChevronDown, ChevronUp, SendHorizontal, Bot, BarChart2, MessageSquare, Newspaper } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Legend } from "recharts";
+// Mock component thay thế cho shadcn/ui
+const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+    <div className={`rounded-3xl shadow-lg border-none bg-white dark:bg-gray-800 p-6 ${className}`}>
+        {children}
+    </div>
+);
+const CardHeader = ({ children }: { children: React.ReactNode }) => (
+    <div className="mb-4">{children}</div>
+);
+const CardTitle = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+    <h2 className={`text-2xl font-bold ${className}`}>{children}</h2>
+);
+const CardContent = ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+);
+const CardDescription = ({ children }: { children: React.ReactNode }) => (
+    <p className="text-gray-600 dark:text-gray-400 mt-1">{children}</p>
+);
+const Button = ({ children, className = "", ...props }: { children: React.ReactNode; className?: string;[key: string]: any }) => (
+    <button
+        className={`bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-blue-700 transition-colors duration-200 ${className}`}
+        {...props}
+    >
+        {children}
+    </button>
+);
+const Textarea = ({ className = "", ...props }: { className?: string;[key: string]: any }) => (
+    <textarea
+        className={`w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 resize-y ${className}`}
+        {...props}
+    />
+);
+const Label = ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
+    <label className="text-base font-semibold" {...props}>
+        {children}
+    </label>
+);
+
+// Mock Select component đã được sửa lỗi
+const Select = ({ children, onValueChange, value, ...props }: { children: React.ReactNode; onValueChange: (value: string) => void; value: string;[key: string]: any }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const handleItemClick = (itemValue: string) => {
+        onValueChange(itemValue);
+        setIsOpen(false);
+    };
+    const selectedItem = React.Children.toArray(children).find(
+        (child) => React.isValidElement(child) && child.props.value === value
+    );
+
+    return (
+        <div className="relative">
+            <div
+                className="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 cursor-pointer flex justify-between items-center"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span>
+                    {selectedItem ? (selectedItem as React.ReactElement).props.children : "Chọn tâm trạng"}
+                </span>
+                <ChevronDown size={20} className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+            </div>
+            {isOpen && (
+                <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-gray-700 border rounded-xl shadow-lg z-10">
+                    {React.Children.map(children, child =>
+                        React.isValidElement(child) &&
+                        <div
+                            className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                            onClick={() => handleItemClick(child.props.value)}
+                        >
+                            {child.props.children}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+// SelectValue, SelectTrigger, SelectContent, SelectItem không cần thiết
+// khi bạn đã mock component Select. Đã xóa các mock thừa để tránh lỗi.
+
+// Mock toast hook
+const useToast = () => ({
+    toast: (options: { title: string; description: string; variant?: string }) => {
+        console.log("Toast:", options.title, options.description);
+    },
+});
+
+// Mock Navbar component
+const Navbar = () => (
+    <nav className="flex justify-end items-center mb-8">
+        <a href="#" className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+            <Bell size={24} />
+        </a>
+    </nav>
+);
+
+// Mock WelcomeToast component
+const WelcomeToast = ({ name }: { name: string }) => (
+    <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-3xl shadow-lg">
+        <h3 className="text-xl font-semibold mb-1">Chào mừng, {name || "Khách"}!</h3>
+        <p>Hãy cùng theo dõi sự phát triển của trẻ ngày hôm nay.</p>
+    </div>
+);
+
+// Mock SummaryCharts component
+// const SummaryCharts = ({ childId }: { childId: string }) => (
+//     <Card className="col-span-1 md:col-span-2">
+//         <CardHeader>
+//             <CardTitle>Biểu đồ tổng quan</CardTitle>
+//             <CardDescription>
+//                 Tổng hợp các chỉ số quan trọng về sức khỏe và tâm trạng.
+//             </CardDescription>
+//         </CardHeader>
+//         <CardContent>
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                 {/* Biểu đồ giả lập */}
+//                 <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl p-4 h-48 flex items-center justify-center">
+//                     <p>Biểu đồ tâm trạng</p>
+//                 </div>
+//                 <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl p-4 h-48 flex items-center justify-center">
+//                     <p>Biểu đồ hoạt động</p>
+//                 </div>
+//             </div>
+//         </CardContent>
+//     </Card>
+// );
+
 interface Notification {
     _id: string;
     title: string;
@@ -22,7 +140,7 @@ interface Notification {
     image?: string;
 }
 
-// Component DailyLogForm đã được di chuyển vào đây
+// Component DailyLogForm
 function DailyLogForm({ childId }: { childId: string }) {
     const [sleepHours, setSleepHours] = useState<number | ''>("");
     const [mood, setMood] = useState<string>("");
@@ -30,7 +148,6 @@ function DailyLogForm({ childId }: { childId: string }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
 
-    // Các lựa chọn tâm trạng đã được sửa đổi để phù hợp với enum của MongoDB
     const moodOptions = [
         { label: "Hạnh phúc", value: "Happy" },
         { label: "Bình tĩnh", value: "Calm" },
@@ -64,7 +181,6 @@ function DailyLogForm({ childId }: { childId: string }) {
                     title: "Lưu nhật ký thành công!",
                     description: "Dữ liệu của bạn đã được ghi lại.",
                 });
-                // Reset form
                 setSleepHours("");
                 setMood("");
                 setNotes("");
@@ -90,25 +206,21 @@ function DailyLogForm({ childId }: { childId: string }) {
     };
 
     return (
-        <Card className="rounded-3xl shadow-lg border-none">
+        <Card className="rounded-3xl shadow-xl border-none">
             <CardHeader>
-                <CardTitle className="text-2xl font-bold">Ghi chép hàng ngày</CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-400">
-                    Ghi lại các hoạt động và tâm trạng của trẻ.
-                </CardDescription>
+                <CardTitle>Ghi chép hàng ngày</CardTitle>
+                <CardDescription>Ghi lại các hoạt động và tâm trạng của trẻ.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <Label htmlFor="sleep-hours" className="text-base font-semibold">
-                            Giờ ngủ (trong 24 giờ)
-                        </Label>
+                        <Label htmlFor="sleep-hours">Giờ ngủ (trong 24 giờ)</Label>
                         <input
                             id="sleep-hours"
                             type="number"
                             value={sleepHours}
                             onChange={(e) => setSleepHours(parseFloat(e.target.value))}
-                            className="mt-2 w-full px-4 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="mt-2 w-full px-4 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                             placeholder="Nhập số giờ ngủ"
                             min="0"
                             max="24"
@@ -117,26 +229,18 @@ function DailyLogForm({ childId }: { childId: string }) {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="mood-select" className="text-base font-semibold">
-                            Tâm trạng của trẻ
-                        </Label>
-                        <Select onValueChange={(value) => setMood(value)} required>
-                            <SelectTrigger id="mood-select" className="w-full">
-                                <SelectValue placeholder="Chọn tâm trạng" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {moodOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
+                        <Label htmlFor="mood-select">Tâm trạng của trẻ</Label>
+                        <Select onValueChange={(value) => setMood(value)} value={mood} required>
+                            {moodOptions.map((option) => (
+                                <div key={option.value} value={option.value}>
+                                    {option.label}
+                                </div>
+                            ))}
                         </Select>
+
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="notes" className="text-base font-semibold">
-                            Ghi chú khác
-                        </Label>
+                        <Label htmlFor="notes">Ghi chú khác</Label>
                         <Textarea
                             id="notes"
                             value={notes}
@@ -154,9 +258,48 @@ function DailyLogForm({ childId }: { childId: string }) {
         </Card>
     );
 }
+function MoodChart({ childId }: { childId: string }) {
+    const [data, setData] = useState<{ name: string; value: number }[]>([]);
 
-// Chú thích: Component DailyLogChart đã được chuyển vào đây để tạo thành một file duy nhất.
-// Điều này giúp tránh các lỗi liên quan đến việc import/export.
+    useEffect(() => {
+        if (!childId) return;
+        (async () => {
+            const res = await fetch(`/api/daily-log/summary?childId=${childId}`);
+            if (!res.ok) return;
+            const js = await res.json();
+            const moods = Object.entries(js.moods || {}).map(([k, v]) => ({
+                name: k,
+                value: v as number,
+            }));
+            setData(moods);
+        })();
+    }, [childId]);
+
+    const COLORS = ["#4CAF50", "#2196F3", "#FFC107", "#FF5722", "#9C27B0", "#00BCD4"];
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Biểu đồ tâm trạng</CardTitle>
+                <CardDescription>Tần suất các tâm trạng được ghi nhận.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div style={{ width: "100%", height: 260 }}>
+                    <ResponsiveContainer>
+                        <PieChart>
+                            <Pie data={data} dataKey="value" nameKey="name" outerRadius={100} label>
+                                {data.map((_, idx) => (
+                                    <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+// Component DailyLogChart
 function DailyLogChart({ childId }: { childId: string }) {
     const [data, setData] = useState<{ date: string, sleep: number }[]>([]);
 
@@ -169,18 +312,16 @@ function DailyLogChart({ childId }: { childId: string }) {
                 return;
             }
             const js = await res.json();
-            const items = (js.logs || []).map((l: any) => ({ date: new Date(l.date).toLocaleDateString(), sleep: l.sleepHours || 0 })).reverse();
+            const items = (js.logs || []).map((l: any) => ({ date: new Date(l.date).toLocaleDateString("vi-VN"), sleep: l.sleepHours || 0 })).reverse();
             setData(items);
         })();
     }, [childId]);
-
+    // Component 2 bieu do tiep theo
     return (
-        <Card className="rounded-3xl shadow-lg border-none">
+        <Card className="rounded-3xl shadow-xl border-none">
             <CardHeader>
-                <CardTitle className="text-2xl font-bold">Biểu đồ giấc ngủ hàng ngày</CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-400">
-                    Theo dõi số giờ ngủ của trẻ theo từng ngày.
-                </CardDescription>
+                <CardTitle>Biểu đồ giấc ngủ hàng ngày</CardTitle>
+                <CardDescription>Theo dõi số giờ ngủ của trẻ theo từng ngày.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div style={{ width: "100%", height: 260 }}>
@@ -190,15 +331,137 @@ function DailyLogChart({ childId }: { childId: string }) {
                             <XAxis dataKey="date" />
                             <YAxis />
                             <Tooltip />
-                            <Line type="monotone" dataKey="sleep" strokeWidth={2} />
+                            <Line type="monotone" dataKey="sleep" strokeWidth={2} className="stroke-blue-500" />
                         </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            </CardContent>
+        </Card>
+
+    );
+}
+function ActivityChart({ childId }: { childId: string }) {
+    const [data, setData] = useState<{ name: string; value: number }[]>([]);
+
+    useEffect(() => {
+        if (!childId) return;
+        (async () => {
+            const res = await fetch(`/api/daily-log/summary?childId=${childId}`);
+            if (!res.ok) return;
+            const js = await res.json();
+            const activities = Object.entries(js.activities || {}).map(([k, v]) => ({
+                name: k,
+                value: v as number,
+            }));
+            setData(activities);
+        })();
+    }, [childId]);
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Biểu đồ hoạt động</CardTitle>
+                <CardDescription>Các hoạt động được ghi chú nhiều nhất.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div style={{ width: "100%", height: 260 }}>
+                    <ResponsiveContainer>
+                        <BarChart data={data}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="value" fill="#8884d8" />
+                        </BarChart>
                     </ResponsiveContainer>
                 </div>
             </CardContent>
         </Card>
     );
 }
+// New component for AI Chatbot
+function AIChatbot() {
+    const [messages, setMessages] = useState<{ role: string, text: string }[]>([
+        { role: "bot", text: "Xin chào! Tôi là trợ lý AI của bạn. Bạn cần tôi hỗ trợ gì?" }
+    ]);
+    const [input, setInput] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!input.trim() || isLoading) return;
+
+        const userMessage = input;
+        setMessages(prev => [...prev, { role: "user", text: userMessage }]);
+        setInput("");
+        setIsLoading(true);
+
+        try {
+            const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: userMessage }] }],
+                }),
+            });
+
+            const data = await response.json();
+            const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.";
+            setMessages(prev => [...prev, { role: "bot", text: botResponse }]);
+        } catch (error) {
+            console.error("Error calling AI API:", error);
+            setMessages(prev => [...prev, { role: "bot", text: "Đã xảy ra lỗi, vui lòng thử lại." }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card className="rounded-3xl shadow-xl border-none">
+            <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                    <Bot size={24} className="text-purple-500" />
+                    <span>Trợ lý AI</span>
+                </CardTitle>
+                <CardDescription>Đặt câu hỏi về chăm sóc trẻ tự kỷ hoặc các vấn đề liên quan.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col h-96 overflow-y-auto pr-2 mb-4 space-y-4">
+                    {messages.map((msg, index) => (
+                        <div
+                            key={index}
+                            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                            <div
+                                className={`max-w-[80%] p-3 rounded-lg ${msg.role === "user"
+                                    ? "bg-blue-500 text-white rounded-br-none"
+                                    : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-white rounded-bl-none"
+                                    }`}
+                            >
+                                {msg.text}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <form onSubmit={handleSendMessage} className="flex space-x-2">
+                    <Textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Nhập tin nhắn..."
+                        rows={1}
+                        className="flex-1"
+                    />
+                    <Button type="submit" disabled={isLoading} className="rounded-xl px-4">
+                        <SendHorizontal size={20} />
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
+    );
+}
+
+// Main Dashboard component
 export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
     const [childId, setChildId] = useState<string | null>("66a8779b1248c8949c81c4e7");
@@ -212,8 +475,7 @@ export default function DashboardPage() {
     };
 
     useEffect(() => {
-        const u = sessionStorage
-.getItem("user");
+        const u = sessionStorage.getItem("user");
         if (u) setUser(JSON.parse(u));
 
         const fetchNotifications = async () => {
@@ -230,35 +492,56 @@ export default function DashboardPage() {
                 setIsLoading(false);
             }
         };
-
         fetchNotifications();
     }, []);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-6 flex">
-            <aside className="w-64 bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl hidden lg:block">
-                <h2 className="text-2xl font-extrabold mb-8 text-gray-800 dark:text-gray-100">AutismCare</h2>
-                <nav className="space-y-3">
-                    <a href="#" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-white bg-blue-600 shadow-md font-semibold transition-all duration-200 hover:bg-blue-700">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-6 flex flex-col lg:flex-row font-sans">
+            {/* Sidebar - Hiệu ứng Glassmorphism */}
+            <aside className="w-full lg:w-64 fixed lg:relative z-50 bottom-0 left-0 lg:h-auto h-20 bg-white/20 backdrop-blur-md border-t lg:border-r border-white/30 rounded-t-3xl lg:rounded-3xl p-4 lg:p-6 shadow-xl lg:flex-shrink-0 transition-all duration-300 flex justify-around lg:justify-start lg:block">
+                <div className="lg:block hidden">
+                    <h2 className="text-2xl font-extrabold mb-8 text-gray-800 dark:text-gray-100">AutismCare</h2>
+                    <nav className="space-y-3">
+                        <a href="#" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-white bg-blue-600 shadow-md font-semibold transition-all duration-200 hover:bg-blue-700">
+                            <BarChart2 size={20} />
+                            <span className="lg:inline">Tổng quan</span>
+                        </a>
+                        <a href="/mycv" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <User size={20} />
+                            <span className="lg:inline">Thông tin trẻ</span>
+                        </a>
+                        <a href="/medical" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <BriefcaseMedical size={20} />
+                            <span className="lg:inline">Thông tin y tế</span>
+                        </a>
+                        <a href="/community" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <MessageSquare size={20} />
+                            <span className="lg:inline">Cộng đồng</span>
+                        </a>
+                    </nav>
+                </div>
+                <div className="lg:hidden flex justify-around w-full">
+                    <a href="#" className="flex flex-col items-center text-blue-600">
                         <BarChart2 size={20} />
-                        <span>Tổng quan</span>
+                        <span className="text-xs">Tổng quan</span>
                     </a>
-                    <a href="/mycv" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <a href="/mycv" className="flex flex-col items-center text-gray-700 dark:text-gray-300">
                         <User size={20} />
-                        <span>Thông tin trẻ</span>
+                        <span className="text-xs">Trẻ</span>
                     </a>
-                    <a href="#" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <a href="/medical" className="flex flex-col items-center text-gray-700 dark:text-gray-300">
                         <BriefcaseMedical size={20} />
-                        <span>Thông tin y tế</span>
+                        <span className="text-xs">Y tế</span>
                     </a>
-                    <a href="/community" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <a href="/community" className="flex flex-col items-center text-gray-700 dark:text-gray-300">
                         <MessageSquare size={20} />
-                        <span>Cộng đồng</span>
+                        <span className="text-xs">CĐ</span>
                     </a>
-                </nav>
+                </div>
             </aside>
 
-            <main className="flex-1 lg:ml-8">
+            {/* Main Content */}
+            <main className="flex-1 lg:ml-8 mt-16 lg:mt-0">
                 <Navbar />
                 <header className="flex items-center justify-between mb-6">
                     <h1 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100">Tổng quan</h1>
@@ -269,20 +552,22 @@ export default function DashboardPage() {
                         <WelcomeToast name={user?.name} />
                         <DailyLogForm childId={childId || ""} />
                         <DailyLogChart childId={childId || ""} />
-                        <SummaryCharts childId={childId || ""} />
+                        {/* SummaryCharts được giữ nguyên */}
+                        {/* <SummaryCharts childId={childId || ""} /> */}
+                        <MoodChart childId={childId || ""} />
+                        <ActivityChart childId={childId || ""} />
+                        <AIChatbot />
                     </div>
 
                     <div className="space-y-8">
-                        <Card className="rounded-3xl shadow-lg border-none">
+                        <Card className="rounded-3xl shadow-xl border-none">
                             <CardHeader>
-                                <CardTitle className="text-2xl font-bold">Tin tức & Thông báo</CardTitle>
-                                <CardDescription className="text-gray-600 dark:text-gray-400">
-                                    Cập nhật các thông tin mới nhất từ AutismCare.
-                                </CardDescription>
+                                <CardTitle>Tin tức & Thông báo</CardTitle>
+                                <CardDescription>Cập nhật các thông tin mới nhất từ AutismCare.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {isLoading ? (
-                                    <div className="text-center text-gray-500 dark:text-gray-400">Đang tải thông báo...</div>
+                                    <div className="text-center text-gray-500 dark:text-gray-400">Đang tải...</div>
                                 ) : error ? (
                                     <div className="text-center text-red-500 dark:text-red-400">Lỗi: {error}</div>
                                 ) : (
@@ -303,22 +588,13 @@ export default function DashboardPage() {
                                                         </h3>
                                                     </div>
                                                     {expandedId === notification._id ? (
-                                                        <ChevronUp
-                                                            size={24}
-                                                            className="text-gray-500 transition-transform duration-300"
-                                                        />
+                                                        <ChevronUp size={24} className="text-gray-500 transition-transform duration-300" />
                                                     ) : (
-                                                        <ChevronDown
-                                                            size={24}
-                                                            className="text-gray-500 transition-transform duration-300"
-                                                        />
+                                                        <ChevronDown size={24} className="text-gray-500 transition-transform duration-300" />
                                                     )}
                                                 </div>
                                                 <div
-                                                    className={`transition-all duration-300 ease-in-out ${expandedId === notification._id
-                                                            ? "max-h-80 opacity-100 mt-4"
-                                                            : "max-h-0 opacity-0"
-                                                        } overflow-hidden`}
+                                                    className={`transition-all duration-300 ease-in-out overflow-hidden ${expandedId === notification._id ? "max-h-80 opacity-100 mt-4" : "max-h-0 opacity-0"}`}
                                                 >
                                                     <div className="pl-6 text-sm text-gray-600 dark:text-gray-400 space-y-2 max-h-72 overflow-y-auto pr-2">
                                                         {notification.image && (
@@ -329,27 +605,16 @@ export default function DashboardPage() {
                                                             />
                                                         )}
                                                         <p>
-                                                            <span className="font-medium">Nội dung:</span>{" "}
-                                                            {notification.content}
+                                                            <span className="font-medium">Nội dung:</span> {notification.content}
                                                         </p>
                                                         <p>
-                                                            <span className="font-medium">Nguồn:</span>{" "}
-                                                            {notification.source}
+                                                            <span className="font-medium">Nguồn:</span> {notification.source}
                                                         </p>
                                                         <p>
-                                                            <span className="font-medium">Ngày:</span>{" "}
-                                                            {new Date(notification.date).toLocaleDateString("vi-VN")}
+                                                            <span className="font-medium">Ngày:</span> {new Date(notification.date).toLocaleDateString("vi-VN")}
                                                         </p>
                                                         <p>
-                                                            <span className="font-medium">Đường dẫn:</span>{" "}
-                                                            <a
-                                                                href={notification.link}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="hover:underline text-blue-500 break-words"
-                                                            >
-                                                                {notification.link}
-                                                            </a>
+                                                            <span className="font-medium">Đường dẫn:</span> <a href={notification.link} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500 break-words">{notification.link}</a>
                                                         </p>
                                                     </div>
                                                 </div>

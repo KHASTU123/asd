@@ -1,37 +1,35 @@
-import { NextResponse } from "next/server";
-import {connectDB} from "../../../../lib/db";
-import DailyLog from "../../../models/DailyLog";
+import { NextRequest, NextResponse } from "next/server";
+import { connectDB } from "@/lib/db";
+import DailyLog from "@/app/models/DailyLog";
 
-export async function GET(req: Request) {
-  await connectDB();
-  const { searchParams } = new URL(req.url);
-  const childId = searchParams.get("childId");
-
-  if (!childId) {
-    return NextResponse.json({ message: "childId is required" }, { status: 400 });
-  }
-
+export async function GET(req: NextRequest) {
   try {
+    await connectDB();
+    const { searchParams } = new URL(req.url);
+    const childId = searchParams.get("childId");
+    if (!childId) {
+      return NextResponse.json({ success: false, message: "childId required" }, { status: 400 });
+    }
+
     const logs = await DailyLog.find({ childId }).lean();
 
-    // Thống kê mood
+    // Đếm mood
     const moodCounts: Record<string, number> = {};
-    logs.forEach(log => {
-      moodCounts[log.mood] = (moodCounts[log.mood] || 0) + 1;
+    logs.forEach((l) => {
+      if (l.mood) {
+        moodCounts[l.mood] = (moodCounts[l.mood] || 0) + 1;
+      }
     });
 
-    // Tính trung bình giấc ngủ
-    const avgSleep = logs.length > 0
-      ? logs.reduce((acc, l) => acc + (l.sleepHours || 0), 0) / logs.length
-      : 0;
+    // Thu thập hoạt động (notes)
+    const activities = logs.map((l) => l.notes).filter(Boolean);
 
     return NextResponse.json({
+      success: true,
       moods: moodCounts,
-      sleep: avgSleep,
-      activities: logs.map(l => l.notes || "").filter(Boolean),
+      activities,
     });
   } catch (err: any) {
-    console.error("Summary API error:", err);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
+    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
 }
