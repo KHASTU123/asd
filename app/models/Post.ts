@@ -1,18 +1,41 @@
-import { Schema, model, models } from "mongoose"
+import mongoose, { Schema, Document } from "mongoose";
 
-const PostSchema = new Schema({
-  author: { type: Schema.Types.ObjectId, ref: "User", required: false},
-  content: { type: String, default: "" },
-  media: [{
-    url: String,
-    kind: { type: String, enum: ["image", "video"], default: "image" }
-  }],
-  likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
-  likesCount: { type: Number, default: 0 },
-  commentsCount: { type: Number, default: 0 },
-}, { timestamps: true })
+type Media = { url: string; kind: "image" | "video" };
 
-PostSchema.index({ createdAt: -1 })
-PostSchema.index({ author: 1, createdAt: -1 })
+export interface IPost extends Document {
+  author: mongoose.Types.ObjectId;
+  content: string;
+  media?: Media[];
+  likes: mongoose.Types.ObjectId[];
+  shares: mongoose.Types.ObjectId[];
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
+  sharedFrom?: mongoose.Types.ObjectId | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export default models.Post || model("Post", PostSchema)
+const PostSchema = new Schema<IPost>(
+  {
+    author: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    content: { type: String, default: "" },
+    media: [
+      {
+        url: String,
+        kind: { type: String, enum: ["image", "video"], default: "image" },
+      },
+    ],
+    likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    shares: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    likesCount: { type: Number, default: 0 },
+    commentsCount: { type: Number, default: 0 },
+    sharesCount: { type: Number, default: 0 },
+    sharedFrom: { type: Schema.Types.ObjectId, ref: "Post", default: null },
+  },
+  { timestamps: true }
+);
+
+PostSchema.index({ createdAt: -1 });
+
+export default mongoose.models.Post || mongoose.model<IPost>("Post", PostSchema);

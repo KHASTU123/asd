@@ -29,7 +29,8 @@ export function ResultsAnalysis() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const storedAssessments = JSON.parse(localStorage.getItem("assessments") || "[]")
+    const storedAssessments = JSON.parse(sessionStorage
+.getItem("assessments") || "[]")
     setAssessments(storedAssessments)
 
     if (storedAssessments.length >= 3) {

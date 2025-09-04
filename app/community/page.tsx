@@ -1,76 +1,53 @@
-// app/community/page.tsx
+"use client";
+import { useEffect, useState } from "react";
+import StoryBar from "@/components/StoryBar";
+import PostComposer from "@/components/PostComposer";
+import PostCard from "@/components/PostCard";
 
-import LeftNav from "@/components/LeftNav"
-
-import RightSidebar from "@/components/RightSidebar"
-
-import PostComposer from "@/components/PostComposer"
-
-import InfiniteFeed from "@/components/InfiniteFeed"
-
-import StoryBar from "@/components/StoryBar"
-
-
-
-export const dynamic = "force-dynamic" // luôn lấy feed mới
-
-
+type Author = { _id: string; fullName: string; avatar?: string };
+export type FeedPost = {
+  _id: string;
+  author: Author;
+  content: string;
+  media?: { url: string; kind: "image" | "video" }[];
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
+  createdAt: string;
+  sharedFrom?: any;
+};
 
 export default function CommunityPage() {
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const res = await fetch("/api/posts");
+    const data = await res.json();
+    setPosts(data.data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
 
   return (
-
-    <main className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-6 py-4">
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-
-        {/* Left navigation */}
-
-        <aside className="hidden lg:block lg:col-span-3">
-
-          <div className="sticky top-20 space-y-4">
-
-            <LeftNav />
-
-          </div>
-
-        </aside>
-
-
-
-        {/* Center column: stories + composer + feed */}
-
-        <section className="lg:col-span-6 space-y-4">
-
+    <main className="mx-auto max-w-4xl px-2 sm:px-4 lg:px-6 py-6">
+      <div className="space-y-4">
+        <StoryBar />
+        <PostComposer onPosted={load} />
+        {loading ? (
+          <p>Đang tải...</p>
+        ) : (
           <div className="space-y-4">
-
-            <StoryBar />
-
-            <PostComposer />
-
+            {posts.map((p) => (
+              <PostCard key={p._id} post={p} onMutateFeed={load} />
+            ))}
           </div>
-
-          <InfiniteFeed />
-
-        </section>
-
-
-
-        {/* Right sidebar: contacts / chatbot */}
-
-        <aside className="hidden xl:block lg:col-span-3">
-
-          <div className="sticky top-20 space-y-4">
-
-            <RightSidebar />
-
-          </div>
-
-        </aside>
-
+        )}
       </div>
-
     </main>
-
-  )
+  );
 }

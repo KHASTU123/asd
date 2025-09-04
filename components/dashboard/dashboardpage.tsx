@@ -76,7 +76,8 @@ export default function DashboardPage() {
     };
 
     useEffect(() => {
-        const u = localStorage.getItem("user");
+        const u = sessionStorage
+.getItem("user");
         if (u) setUser(JSON.parse(u));
 
         // Fetch notifications from the API

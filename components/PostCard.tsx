@@ -1,78 +1,65 @@
-"use client"
+"use client";
+import { useState } from "react";
+import CommentList from "@/components/CommentList";
+import Link from "next/link";
+export default function PostCard({ post, onMutateFeed }: { post: any; onMutateFeed?: () => void }) {
+  const [open, setOpen] = useState(false);
 
-import { useState } from "react"
-import CommentList from "@/components/CommentList"
+  const createdAt = post.createdAt ? new Date(post.createdAt) : null;
 
-export interface PostCardProps {
-  post: {
-    _id: string
-    content?: string
-    createdAt?: string
-    likes?: string[]
-    likesCount?: number
-    commentsCount?: number
-    media?: { url: string; kind: "image" | "video" }[]
-    author?: {
-      _id: string
-      name: string
-      avatar?: string
-    }
+  async function toggleLike() {
+    const token = sessionStorage
+      .getItem("token") || "";
+    await fetch(`/api/posts/${post._id}/like`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    onMutateFeed?.();
   }
-  currentUserId?: string
-  onMutateFeed?: () => void
-}
 
-async function toggleLike(postId: string) {
-  const res = await fetch(`/api/posts/${postId}/like`, { method: "POST" })
-  if (!res.ok) throw new Error(await res.text())
-  return res.json() as Promise<{ liked: boolean; likesCount: number }>
-}
-
-export default function PostCard({ post, currentUserId, onMutateFeed }: PostCardProps) {
-  const [showComments, setShowComments] = useState(false)
-  const [likesCount, setLikesCount] = useState(
-    Array.isArray(post.likes) ? post.likes.length : post.likesCount ?? 0
-  )
-  const createdAt = post.createdAt ? new Date(post.createdAt) : null
-
-  async function handleLike() {
-    try {
-      const res = await toggleLike(post._id)
-      setLikesCount(res.likesCount)
-      onMutateFeed?.()
-    } catch (err) {
-      console.error("Error liking post", err)
-    }
+  async function share() {
+    const token = sessionStorage
+      .getItem("token") || "";
+    const res = await fetch(`/api/posts/${post._id}/share`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) onMutateFeed?.();
   }
 
   return (
     <article className="rounded-2xl border bg-white/60 dark:bg-neutral-900/60 p-3 shadow-sm">
-      {/* Header */}
       <header className="flex items-center gap-3">
-        <img
-          src={post.author?.avatar || "/avatar-placeholder.png"}
-          alt={post.author?.name || "avatar"}
-          className="h-10 w-10 rounded-full object-cover"
-        />
-        <div className="flex flex-col">
-          <span className="font-medium">{post.author?.name || "Ẩn danh"}</span>
-          {createdAt && (
-            <time className="text-xs text-neutral-500">
-              {createdAt.toLocaleString("vi-VN")}
-            </time>
-          )}
-        </div>
+        <Link href={`/profile/${post.author?._id}`} className="flex items-center gap-2">
+          <img
+            src={post.author?.avatar || "/avatar-placeholder.png"}
+            alt="avatar"
+            className="h-10 w-10 rounded-full object-cover"
+          />
+          <span className="font-medium">{post.author?.fullName || "Ẩn danh"}</span>
+        </Link>
+        <time className="text-xs text-neutral-500">{createdAt ? createdAt.toLocaleString() : ""}</time>
       </header>
 
-      {/* Content */}
-      {post.content && (
-        <p className="mt-3 whitespace-pre-wrap leading-relaxed">{post.content}</p>
+      {post.sharedFrom && (
+        <div className="mt-3 rounded-xl border p-3">
+          <div className="text-sm text-neutral-500 mb-2">Đã chia sẻ</div>
+          <div className="flex items-center gap-2 mb-2">
+            <img
+              className="w-6 h-6 rounded-full"
+              src={post.sharedFrom?.author?.avatar || "/avatar-placeholder.png"}
+            />
+            <div className="text-sm">{post.sharedFrom?.author?.fullName}</div>
+          </div>
+          <div className="whitespace-pre-wrap text-sm">{post.sharedFrom?.content}</div>
+        </div>
       )}
 
-      {/* Media */}
-      {post.media && post.media.length > 0 && (
+      {post.content && <p className="mt-3 whitespace-pre-wrap leading-relaxed">{post.content}</p>}
+
+      {post.media?.length ? (
         <div className="mt-3 grid grid-cols-1 gap-2">
-          {post.media.map((m, i) =>
+          {post.media.map((m: any, i: number) =>
             m.kind === "video" ? (
               <video key={i} controls className="w-full rounded-xl">
                 <source src={m.url} />
@@ -82,31 +69,25 @@ export default function PostCard({ post, currentUserId, onMutateFeed }: PostCard
             )
           )}
         </div>
-      )}
+      ) : null}
 
-      {/* Actions */}
       <div className="mt-3 flex items-center justify-between text-sm">
-        <button
-          className="px-3 py-2 rounded-lg hover:bg-black/5"
-          onClick={handleLike}
-        >
-          👍 Thích {likesCount ? `(${likesCount})` : ""}
+        <button className="px-3 py-2 rounded-lg hover:bg-black/5" onClick={toggleLike}>
+          👍 Thích {post.likesCount ? `(${post.likesCount})` : ""}
         </button>
-        <button
-          className="px-3 py-2 rounded-lg hover:bg-black/5"
-          onClick={() => setShowComments(s => !s)}
-          aria-expanded={showComments}
-        >
+        <button className="px-3 py-2 rounded-lg hover:bg-black/5" onClick={() => setOpen((s) => !s)}>
           💬 Bình luận {post.commentsCount ? `(${post.commentsCount})` : ""}
+        </button>
+        <button className="px-3 py-2 rounded-lg hover:bg-black/5" onClick={share}>
+          🔗 Chia sẻ {post.sharesCount ? `(${post.sharesCount})` : ""}
         </button>
       </div>
 
-      {/* Comment Section */}
-      {showComments && (
+      {open && (
         <div className="mt-3">
-          <CommentList postId={post._id} currentUserId={currentUserId || ""} />
+          <CommentList postId={post._id} onAnyChange={onMutateFeed} />
         </div>
       )}
     </article>
-  )
+  );
 }

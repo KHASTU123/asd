@@ -46,8 +46,10 @@ export function ChildSetupForm() {
     } catch (error) {
       console.error("Lỗi khi lưu thông tin:", error)
 
-      // fallback: lưu localStorage để không mất dữ liệu
-      localStorage.setItem("childInfo", JSON.stringify(formData))
+      // fallback: lưu sessionStorage
+ để không mất dữ liệu
+      sessionStorage
+.setItem("childInfo", JSON.stringify(formData))
       router.push("/dashboard")
     } finally {
       setIsLoading(false)

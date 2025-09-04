@@ -1,11 +1,7 @@
-// app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import User from "@/app/models/User";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+import { hashPassword, signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,45 +9,30 @@ export async function POST(req: NextRequest) {
     const { email, password, fullName } = await req.json();
 
     if (!email || !password || !fullName) {
-      return NextResponse.json(
-        { success: false, message: "Missing fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Missing fields" }, { status: 400 });
     }
 
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return NextResponse.json(
-        { success: false, message: "Email already registered" },
-        { status: 400 }
-      );
+    const existed = await User.findOne({ email });
+    if (existed) {
+      return NextResponse.json({ success: false, message: "Email already used" }, { status: 409 });
     }
 
-    const hashed = await bcrypt.hash(password, 12);
+    const hashed = await hashPassword(password);
     const user = await User.create({
       email,
       password: hashed,
       fullName,
-      avatar: "/avatar-placeholder.png", // avatar mặc định
+      avatar: "/avatar-placeholder.png",
     });
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
-
+    const token = signToken(user._id.toString());
     return NextResponse.json({
       success: true,
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        fullName: user.fullName,
-        avatar: user.avatar,
-      },
+      user: { id: user._id, email: user.email, fullName: user.fullName, avatar: user.avatar },
     });
-  } catch (err) {
-    console.error("Register error:", err);
-    return NextResponse.json(
-      { success: false, message: "Server error" },
-      { status: 500 }
-    );
+  } catch (e) {
+    console.error("Register error:", e);
+    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
   }
 }

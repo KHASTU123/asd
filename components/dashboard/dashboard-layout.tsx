@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Heart, LayoutDashboard, Calendar, BarChart3, Phone, BookOpen, Settings, Menu, X, LogOut } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-// Hàm logout gọi API + clear localStorage
+// Hàm logout gọi API + clear sessionStorage
+
 async function logout(router: ReturnType<typeof useRouter>) {
   try {
     const res = await fetch("/api/auth/logout", {
@@ -16,7 +17,8 @@ async function logout(router: ReturnType<typeof useRouter>) {
       credentials: "include",
     })
     if (res.ok) {
-      localStorage.clear()
+      sessionStorage
+.clear()
       router.push("/login") // chuyển hướng về trang login
     }
   } catch (error) {

@@ -128,13 +128,17 @@ export function AssessmentForm() {
         throw new Error("API lưu thất bại")
       }
     } catch (err) {
-      console.error("API lỗi, fallback lưu localStorage:", err)
+      console.error("API lỗi, fallback lưu sessionStorage
+:", err)
 
-      // fallback localStorage
+      // fallback sessionStorage
+
       if (typeof window !== "undefined") {
-        const existingAssessments = JSON.parse(localStorage.getItem("assessments") || "[]")
+        const existingAssessments = JSON.parse(sessionStorage
+.getItem("assessments") || "[]")
         existingAssessments.push(assessmentResult)
-        localStorage.setItem("assessments", JSON.stringify(existingAssessments))
+        sessionStorage
+.setItem("assessments", JSON.stringify(existingAssessments))
       }
     }
 

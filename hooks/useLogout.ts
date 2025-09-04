@@ -13,8 +13,10 @@ export function useLogout() {
         method: "POST",
       })
 
-      // Xoá user trong localStorage
-      localStorage.removeItem("user")
+      // Xoá user trong sessionStorage
+
+      sessionStorage
+.removeItem("user")
 
       // Điều hướng về login
       router.push("/login")

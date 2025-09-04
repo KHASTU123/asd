@@ -23,8 +23,10 @@ export function LoginForm() {
 
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem("token", data.token); // 🔑 Lưu token
-        localStorage.setItem("user", JSON.stringify(data.user));
+        sessionStorage
+.setItem("token", data.token); // 🔑 Lưu token
+        sessionStorage
+.setItem("user", JSON.stringify(data.user));
         alert("Login thành công!");
       }
       if (!res.ok) {
