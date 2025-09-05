@@ -11,7 +11,7 @@ const HealthUpdateSchema = new mongoose.Schema({
 const HealthUpdate = mongoose.models.HealthUpdate || mongoose.model('HealthUpdate', HealthUpdateSchema);
 
 // URL kết nối tới MongoDB của bạn
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGO_URI = process.env.MONGO_URI;
 
 /**
  * Hàm kết nối với MongoDB
@@ -21,12 +21,12 @@ async function connectDB() {
         return;
     }
 
-    if (!MONGODB_URI) {
-        throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+    if (!MONGO_URI) {
+        throw new Error('Please define the MONGO_URI environment variable inside .env.local');
     }
 
     try {
-        await mongoose.connect(MONGODB_URI);
+        await mongoose.connect(MONGO_URI);
         console.log('MongoDB connected successfully');
     } catch (error) {
         console.error('MongoDB connection failed:', error);

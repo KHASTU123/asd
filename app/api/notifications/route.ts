@@ -22,11 +22,11 @@ const MONGO_URI = process.env.MONGO_URI;
  */
 async function connectDB() {
     if (mongoose.connection.readyState >= 1) {
-        return; // Đã kết nối, không cần kết nối lại
+        return; // Đã kết nối, không cần kết nối lạ
     }
 
     if (!MONGO_URI) {
-        console.error('Lỗi: Vui lòng định nghĩa biến môi trường MONGODB_URI.');
+        console.error('Lỗi: Vui lòng định nghĩa biến môi trường MONGO_URI.');
         return;
     }
 

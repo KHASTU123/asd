@@ -141,9 +141,132 @@ interface Notification {
 }
 
 // Component DailyLogForm
+// function DailyLogForm({ childId }: { childId: string }) {
+//     const [sleepHours, setSleepHours] = useState<number | ''>("");
+//     const [mood, setMood] = useState<string>("");
+//     const [notes, setNotes] = useState("");
+//     const [isSubmitting, setIsSubmitting] = useState(false);
+//     const { toast } = useToast();
+
+//     const moodOptions = [
+//         { label: "Hạnh phúc", value: "Happy" },
+//         { label: "Bình tĩnh", value: "Calm" },
+//         { label: "Vui vẻ", value: "Joyful" },
+//         { label: "Mệt mỏi", value: "Tired" },
+//         { label: "Buồn bã", value: "Sad" },
+//         { label: "Tức giận", value: "Angry" },
+//         { label: "Lo lắng", value: "Anxious" },
+//     ];
+
+//     const handleSubmit = async (e: React.FormEvent) => {
+//         e.preventDefault();
+//         setIsSubmitting(true);
+//         const logData = {
+//             childId,
+//             date: new Date().toISOString(),
+//             sleepHours: typeof sleepHours === 'number' ? sleepHours : 0,
+//             mood,
+//             notes,
+//         };
+
+//         try {
+//             const res = await fetch("/api/daily-log", {
+//                 method: "POST",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify(logData),
+//             });
+
+//             if (res.ok) {
+//                 toast({
+//                     title: "Lưu nhật ký thành công!",
+//                     description: "Dữ liệu của bạn đã được ghi lại.",
+//                 });
+//                 setSleepHours("");
+//                 setMood("");
+//                 setNotes("");
+//             } else {
+//                 const errorData = await res.json();
+//                 toast({
+//                     title: "Có lỗi xảy ra",
+//                     description: errorData.message || "Không thể lưu nhật ký.",
+//                     variant: "destructive",
+//                 });
+//                 console.error("Failed to save daily log:", errorData);
+//             }
+//         } catch (err) {
+//             console.error("Network error:", err);
+//             toast({
+//                 title: "Lỗi kết nối",
+//                 description: "Không thể kết nối tới máy chủ.",
+//                 variant: "destructive",
+//             });
+//         } finally {
+//             setIsSubmitting(false);
+//         }
+//     };
+
+//     return (
+//         <Card className="rounded-3xl shadow-xl border-none">
+//             <CardHeader>
+//                 <CardTitle>Ghi chép hàng ngày</CardTitle>
+//                 <CardDescription>Ghi lại các hoạt động và tâm trạng của trẻ.</CardDescription>
+//             </CardHeader>
+//             <CardContent>
+//                 <form onSubmit={handleSubmit} className="space-y-6">
+//                     <div>
+//                         <Label htmlFor="sleep-hours">Giờ ngủ (trong 24 giờ)</Label>
+//                         <input
+//                             id="sleep-hours"
+//                             type="number"
+//                             value={sleepHours}
+//                             onChange={(e) => setSleepHours(parseFloat(e.target.value))}
+//                             className="mt-2 w-full px-4 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+//                             placeholder="Nhập số giờ ngủ"
+//                             min="0"
+//                             max="24"
+//                             step="0.5"
+//                             required
+//                         />
+//                     </div>
+//                     <div className="space-y-2">
+//                         <Label htmlFor="mood-select">Tâm trạng của trẻ</Label>
+//                         <Select onValueChange={(value) => setMood(value)} value={mood} required>
+//                             {moodOptions.map((option) => (
+//                                 <div key={option.value} value={option.value}>
+//                                     {option.label}
+//                                 </div>
+//                             ))}
+//                         </Select>
+
+//                     </div>
+//                     <div className="space-y-2">
+//                         <Label htmlFor="notes">Ghi chú khác</Label>
+//                         <Textarea
+//                             id="notes"
+//                             value={notes}
+//                             onChange={(e) => setNotes(e.target.value)}
+//                             placeholder="Nhập các ghi chú bổ sung về ngày hôm nay..."
+//                             rows={4}
+//                             className="mt-2"
+//                         />
+//                     </div>
+//                     <Button type="submit" className="w-full" disabled={isSubmitting}>
+//                         {isSubmitting ? "Đang lưu..." : "Lưu Nhật ký"}
+//                     </Button>
+//                 </form>
+//             </CardContent>
+//         </Card>
+//     );
+// }
+// Component DailyLogForm
 function DailyLogForm({ childId }: { childId: string }) {
     const [sleepHours, setSleepHours] = useState<number | ''>("");
     const [mood, setMood] = useState<string>("");
+    const [eating, setEating] = useState<string>("");
+    const [behaviorNotes, setBehaviorNotes] = useState("");
+    const [communication, setCommunication] = useState<string>("");
+    const [socialSkills, setSocialSkills] = useState<string[]>([]);
+    const [independence, setIndependence] = useState<string[]>([]);
     const [notes, setNotes] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
@@ -158,14 +281,53 @@ function DailyLogForm({ childId }: { childId: string }) {
         { label: "Lo lắng", value: "Anxious" },
     ];
 
+    const fiveScaleOptions = [
+        { label: "Rất tốt", value: "VeryGood" },
+        { label: "Tốt", value: "Good" },
+        { label: "Bình thường", value: "Normal" },
+        { label: "Không tốt", value: "Bad" },
+        { label: "Rất kém", value: "VeryBad" },
+    ];
+
+    const socialOptions = [
+        "Phản ứng khi được gọi tên",
+        "Eye contact",
+        "Tương tác với bạn bè, người thân",
+        "Tham gia trò chơi chung, hoạt động nhóm",
+        "Tương tác với phụ huynh",
+        "Kiểm soát hành vi bản thân",
+        "Khả năng chú ý đối tượng",
+    ];
+
+    const independenceOptions = [
+        "Tự ăn uống",
+        "Đi vệ sinh",
+        "Tự mặc/ cởi quần áo",
+        "Vệ sinh cá nhân (rửa tay, đánh răng)",
+    ];
+
+    const toggleCheckbox = (value: string, list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>) => {
+        if (list.includes(value)) {
+            setList(list.filter(item => item !== value));
+        } else {
+            setList([...list, value]);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+
         const logData = {
             childId,
             date: new Date().toISOString(),
             sleepHours: typeof sleepHours === 'number' ? sleepHours : 0,
             mood,
+            eating,
+            behaviorNotes,
+            communication,
+            socialSkills,
+            independence,
             notes,
         };
 
@@ -183,6 +345,11 @@ function DailyLogForm({ childId }: { childId: string }) {
                 });
                 setSleepHours("");
                 setMood("");
+                setEating("");
+                setBehaviorNotes("");
+                setCommunication("");
+                setSocialSkills([]);
+                setIndependence([]);
                 setNotes("");
             } else {
                 const errorData = await res.json();
@@ -191,7 +358,6 @@ function DailyLogForm({ childId }: { childId: string }) {
                     description: errorData.message || "Không thể lưu nhật ký.",
                     variant: "destructive",
                 });
-                console.error("Failed to save daily log:", errorData);
             }
         } catch (err) {
             console.error("Network error:", err);
@@ -213,6 +379,8 @@ function DailyLogForm({ childId }: { childId: string }) {
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
+
+                    {/* Giờ ngủ */}
                     <div>
                         <Label htmlFor="sleep-hours">Giờ ngủ (trong 24 giờ)</Label>
                         <input
@@ -220,7 +388,7 @@ function DailyLogForm({ childId }: { childId: string }) {
                             type="number"
                             value={sleepHours}
                             onChange={(e) => setSleepHours(parseFloat(e.target.value))}
-                            className="mt-2 w-full px-4 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                            className="mt-2 w-full px-4 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600"
                             placeholder="Nhập số giờ ngủ"
                             min="0"
                             max="24"
@@ -228,8 +396,10 @@ function DailyLogForm({ childId }: { childId: string }) {
                             required
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="mood-select">Tâm trạng của trẻ</Label>
+
+                    {/* Tâm trạng */}
+                    <div>
+                        <Label>Tâm trạng của trẻ</Label>
                         <Select onValueChange={(value) => setMood(value)} value={mood} required>
                             {moodOptions.map((option) => (
                                 <div key={option.value} value={option.value}>
@@ -237,19 +407,88 @@ function DailyLogForm({ childId }: { childId: string }) {
                                 </div>
                             ))}
                         </Select>
-
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="notes">Ghi chú khác</Label>
+
+                    {/* Ăn uống */}
+                    <div>
+                        <Label>Ăn uống</Label>
+                        <Select onValueChange={(value) => setEating(value)} value={eating} required>
+                            {fiveScaleOptions.map((option) => (
+                                <div key={option.value} value={option.value}>
+                                    {option.label}
+                                </div>
+                            ))}
+                        </Select>
+                    </div>
+
+                    {/* Hành vi bất thường */}
+                    <div>
+                        <Label>Hành vi bất thường trong ngày</Label>
                         <Textarea
-                            id="notes"
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Nhập các ghi chú bổ sung về ngày hôm nay..."
-                            rows={4}
-                            className="mt-2"
+                            value={behaviorNotes}
+                            onChange={(e) => setBehaviorNotes(e.target.value)}
+                            placeholder="Mô tả các hành vi bất thường..."
+                            rows={3}
                         />
                     </div>
+
+                    {/* Giao tiếp */}
+                    <div>
+                        <Label>Giao tiếp</Label>
+                        <Select onValueChange={(value) => setCommunication(value)} value={communication} required>
+                            {fiveScaleOptions.map((option) => (
+                                <div key={option.value} value={option.value}>
+                                    {option.label}
+                                </div>
+                            ))}
+                        </Select>
+                    </div>
+
+                    {/* Tương tác xã hội & bản thân */}
+                    <div>
+                        <Label>Tương tác xã hội & bản thân</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                            {socialOptions.map((item) => (
+                                <label key={item} className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={socialSkills.includes(item)}
+                                        onChange={() => toggleCheckbox(item, socialSkills, setSocialSkills)}
+                                    />
+                                    <span>{item}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Khả năng tự lập */}
+                    <div>
+                        <Label>Khả năng tự lập</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                            {independenceOptions.map((item) => (
+                                <label key={item} className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={independence.includes(item)}
+                                        onChange={() => toggleCheckbox(item, independence, setIndependence)}
+                                    />
+                                    <span>{item}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Ghi chú khác */}
+                    <div>
+                        <Label>Ghi chú khác</Label>
+                        <Textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Nhập các ghi chú bổ sung..."
+                            rows={3}
+                        />
+                    </div>
+
                     <Button type="submit" className="w-full" disabled={isSubmitting}>
                         {isSubmitting ? "Đang lưu..." : "Lưu Nhật ký"}
                     </Button>
@@ -258,6 +497,7 @@ function DailyLogForm({ childId }: { childId: string }) {
         </Card>
     );
 }
+
 function MoodChart({ childId }: { childId: string }) {
     const [data, setData] = useState<{ name: string; value: number }[]>([]);
 
@@ -379,87 +619,146 @@ function ActivityChart({ childId }: { childId: string }) {
     );
 }
 // New component for AI Chatbot
-function AIChatbot() {
-    const [messages, setMessages] = useState<{ role: string, text: string }[]>([
-        { role: "bot", text: "Xin chào! Tôi là trợ lý AI của bạn. Bạn cần tôi hỗ trợ gì?" }
+// Thay thế toàn bộ component AIChatbot hiện tại bằng component dưới
+function AIChatbot({ childId }: { childId?: string }) {
+    const [messages, setMessages] = useState<
+        { role: "user" | "assistant", content: string, sources?: Array<{ label: string; docId: string; chunkIndex: number; preview?: string }> }[]
+    >([
+        { role: "assistant", content: "Xin chào! Tôi là trợ lý AI dựa trên dữ liệu riêng của bạn. Bạn cần hỗ trợ gì?" }
     ]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSendMessage = async (e: React.FormEvent) => {
+    async function send(e: React.FormEvent) {
         e.preventDefault();
         if (!input.trim() || isLoading) return;
 
-        const userMessage = input;
-        setMessages(prev => [...prev, { role: "user", text: userMessage }]);
+        const userMsg = { role: "user" as const, content: input };
+        setMessages(prev => [...prev, userMsg]);
         setInput("");
         setIsLoading(true);
 
         try {
-            const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const resp = await fetch("/api/rag/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: userMessage }] }],
+                    message: userMsg.content,
+                    conversation: messages.map(m => ({ role: m.role, content: m.content })),
+                    childId,  // phải là childId thực của user
+                    userId: User?._id, // nên gửi thêm userId
                 }),
-            });
 
-            const data = await response.json();
-            const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.";
-            setMessages(prev => [...prev, { role: "bot", text: botResponse }]);
-        } catch (error) {
-            console.error("Error calling AI API:", error);
-            setMessages(prev => [...prev, { role: "bot", text: "Đã xảy ra lỗi, vui lòng thử lại." }]);
+            });
+            const js = await resp.json();
+            const assistantMsg = {
+                role: "assistant" as const,
+                content: js.answer ?? "Xin lỗi, tôi chưa có câu trả lời.",
+                sources: js.sources ?? [],
+            };
+            setMessages(prev => [...prev, assistantMsg]);
+        } catch (err) {
+            console.error(err);
+            setMessages(prev => [...prev, { role: "assistant", content: "Đã xảy ra lỗi, vui lòng thử lại." }]);
         } finally {
             setIsLoading(false);
         }
-    };
+    }
 
     return (
         <Card className="rounded-3xl shadow-xl border-none">
             <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                     <Bot size={24} className="text-purple-500" />
-                    <span>Trợ lý AI</span>
+                    <span>Trợ lý AI (RAG)</span>
                 </CardTitle>
-                <CardDescription>Đặt câu hỏi về chăm sóc trẻ tự kỷ hoặc các vấn đề liên quan.</CardDescription>
+                <CardDescription>Trả lời dựa trên dữ liệu riêng (hồ sơ, nhật ký, y tế...)</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col h-96 overflow-y-auto pr-2 mb-4 space-y-4">
-                    {messages.map((msg, index) => (
-                        <div
-                            key={index}
-                            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                            <div
-                                className={`max-w-[80%] p-3 rounded-lg ${msg.role === "user"
-                                    ? "bg-blue-500 text-white rounded-br-none"
-                                    : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-white rounded-bl-none"
-                                    }`}
-                            >
-                                {msg.text}
+                    {messages.map((m, i) => (
+                        <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                            <div className={`max-w-[80%] p-3 rounded-lg ${m.role === "user"
+                                ? "bg-blue-500 text-white rounded-br-none"
+                                : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-white rounded-bl-none"
+                                }`}>
+                                <div className="whitespace-pre-wrap">{m.content}</div>
+                                {m.role === "assistant" && m.sources && m.sources.length > 0 && (
+                                    <div className="mt-3 text-xs opacity-90">
+                                        <div className="font-semibold mb-1">Nguồn:</div>
+                                        <ul className="list-disc pl-5 space-y-1">
+                                            {m.sources.map((s, idx) => (
+                                                <li key={idx}>
+                                                    <span className="font-medium">{s.label}</span>
+                                                    {": "}
+                                                    <span>{s.docId} (chunk {s.chunkIndex})</span>
+                                                    {s.preview ? <> — <em>{s.preview}</em></> : null}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
                 </div>
-                <form onSubmit={handleSendMessage} className="flex space-x-2">
+
+                <form onSubmit={send} className="flex space-x-2">
                     <Textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Nhập tin nhắn..."
+                        placeholder="Nhập câu hỏi…"
                         rows={1}
                         className="flex-1"
                     />
                     <Button type="submit" disabled={isLoading} className="rounded-xl px-4">
-                        <SendHorizontal size={20} />
+                        {isLoading ? "..." : <SendHorizontal size={20} />}
                     </Button>
                 </form>
             </CardContent>
         </Card>
     );
 }
+function IngestButton() {
+    const [loading, setLoading] = useState(false);
+    const [result, setResult] = useState<any>(null);
+
+    async function handleIngest() {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/rag/ingest-all", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}), // có thể thêm { userId, childId }
+            });
+            const data = await res.json();
+            setResult(data);
+        } catch (err) {
+            console.error("❌ Error ingest:", err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    return (
+        <div className="mb-4">
+            <button
+                onClick={handleIngest}
+                disabled={loading}
+                className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
+            >
+                {loading ? "Đang ingest..." : "Ingest dữ liệu vào Pinecone"}
+            </button>
+
+            {result && (
+                <pre className="mt-2 p-2 bg-gray-100 rounded text-sm">
+                    {JSON.stringify(result, null, 2)}
+                </pre>
+            )}
+        </div>
+    );
+}
+
 
 // Main Dashboard component
 export default function DashboardPage() {
@@ -550,7 +849,9 @@ export default function DashboardPage() {
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-8">
                         <WelcomeToast name={user?.name} />
+
                         <DailyLogForm childId={childId || ""} />
+                        <IngestButton />
                         <DailyLogChart childId={childId || ""} />
                         {/* SummaryCharts được giữ nguyên */}
                         {/* <SummaryCharts childId={childId || ""} /> */}

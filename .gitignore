@@ -30,6 +30,7 @@ npm run dev || npm run server
 npm install firebase --force or --legacy-peer-deps
 npm install next-auth --force or --legacy-peer-deps
 npm add mongoose next-auth bcrypt zod @tanstack/react-query cloudinary react-hook-form next-themes @types/bcrypt
+npm i @pinecone-database/pinecone openai
 
 
 

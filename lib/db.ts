@@ -17,7 +17,7 @@ export async function connectDB() {
   if (!cached.promise) {
     cached.promise = mongoose
       .connect(MONGO_URI, {
-        dbName: process.env.MONGODB_DB || undefined,
+        dbName: process.env.MONGO_DB || undefined,
       })
       .then((m) => m);
   }

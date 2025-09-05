@@ -1,46 +1,47 @@
-// app/api/daily-log/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import DailyLog from "@/app/models/DailyLog";
 
-export async function POST(req: NextRequest) {
+// POST: Lưu dữ liệu nhật ký
+export async function POST(req: Request) {
   try {
     await connectDB();
     const body = await req.json();
-    const { childId, date, mood, sleepHours, notes } = body;
 
-    if (!childId) {
-      return NextResponse.json({ success: false, message: "childId required" }, { status: 400 });
-    }
-    const log = await DailyLog.create({
-      childId,
-      date: date || new Date(),
-      mood,
-      sleepHours,
-      notes,
-    });
+    const newLog = await DailyLog.create(body);
 
-    return NextResponse.json({ success: true, log }, { status: 201 });
-  } catch (err: any) {
-    console.error("DailyLog POST error:", err);
-    return NextResponse.json({ success: false, message: err.message || "Server error" }, { status: 500 });
+    return NextResponse.json({ success: true, log: newLog }, { status: 201 });
+  } catch (error: any) {
+    console.error("POST /api/daily-log error:", error);
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 500 }
+    );
   }
 }
-export async function GET(req: NextRequest) {
+
+// GET: Lấy danh sách log theo childId
+export async function GET(req: Request) {
   try {
     await connectDB();
     const { searchParams } = new URL(req.url);
     const childId = searchParams.get("childId");
 
     if (!childId) {
-      return NextResponse.json({ success: false, message: "childId required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Thiếu childId" },
+        { status: 400 }
+      );
     }
 
-    const logs = await DailyLog.find({ childId }).sort({ date: -1 }).lean();
+    const logs = await DailyLog.find({ childId }).sort({ date: -1 });
 
     return NextResponse.json({ success: true, logs }, { status: 200 });
-  } catch (err: any) {
-    console.error("DailyLog GET error:", err);
-    return NextResponse.json({ success: false, message: err.message || "Server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("GET /api/daily-log error:", error);
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 500 }
+    );
   }
 }
